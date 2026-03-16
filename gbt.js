@@ -56,4 +56,36 @@
         }
     }, { capture:true });
 
+    const addTimestampToAIMessages = () => {
+        const assistantMessages = document.querySelectorAll('[data-message-author-role="assistant"]');
+        assistantMessages.forEach(msg => {
+            if (msg.dataset.timestamped) return;
+
+            const contentDiv = msg.querySelector('.markdown, .prose');
+            if (contentDiv) {
+                const stamp = getCompactTimestamp();
+                const stampSpan = document.createElement('div');
+                stampSpan.style.fontSize = '0.75rem';
+                stampSpan.style.opacity = '0.5';
+                stampSpan.style.marginBottom = '0.5rem';
+                stampSpan.innerText = stamp;
+                contentDiv.prepend(stampSpan);
+                msg.dataset.timestamped = 'true';
+            }
+        });
+    };
+
+    const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+            if (mutation.addedNodes.length) {
+                addTimestampToAIMessages();
+            }
+        });
+    });
+
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    // Initial run
+    addTimestampToAIMessages();
+
 })();
