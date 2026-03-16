@@ -56,31 +56,45 @@
         }
     }, { capture:true });
 
-    const addTimestampToAIMessages = () => {
-        const assistantMessages = document.querySelectorAll('[data-message-author-role="assistant"]');
+    const addTimestampToAIMessages = (root = document) => {
+        // Find assistant messages within the root
+        const assistantMessages = root === document
+            ? document.querySelectorAll('[data-message-author-role="assistant"]')
+            : (root.matches?.('[data-message-author-role="assistant"]') ? [root] : root.querySelectorAll?.('[data-message-author-role="assistant"]') || []);
+
         assistantMessages.forEach(msg => {
             if (msg.dataset.timestamped) return;
 
             const contentDiv = msg.querySelector('.markdown, .prose');
             if (contentDiv) {
                 const stamp = getCompactTimestamp();
-                const stampSpan = document.createElement('div');
-                stampSpan.style.fontSize = '0.75rem';
-                stampSpan.style.opacity = '0.5';
-                stampSpan.style.marginBottom = '0.5rem';
-                stampSpan.innerText = stamp;
-                contentDiv.prepend(stampSpan);
+                const stampDiv = document.createElement('div');
+                stampDiv.style.fontSize = '0.75rem';
+                stampDiv.style.opacity = '0.5';
+                stampDiv.style.marginBottom = '0.5rem';
+                stampDiv.innerText = stamp;
+                contentDiv.prepend(stampDiv);
                 msg.dataset.timestamped = 'true';
             }
         });
     };
 
+    let debounceTimer;
     const observer = new MutationObserver((mutations) => {
-        mutations.forEach((mutation) => {
-            if (mutation.addedNodes.length) {
-                addTimestampToAIMessages();
+        let shouldProcess = false;
+        for (const mutation of mutations) {
+            if (mutation.addedNodes.length > 0) {
+                shouldProcess = true;
+                break;
             }
-        });
+        }
+
+        if (shouldProcess) {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => {
+                addTimestampToAIMessages();
+            }, 500);
+        }
     });
 
     observer.observe(document.body, { childList: true, subtree: true });
