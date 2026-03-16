@@ -32,12 +32,12 @@
         if (/^\d{2}:\d{2}\s*\(/.test(text)) return;
 
         const stamp = getCompactTimestamp();
+        const newText = `${stamp}\n\n${text}`;
 
-        // Timestamp + linebreaks
-        editor.innerText = `${stamp}\n\n${text}`;
-
-        editor.dispatchEvent(new Event('input', { bubbles:true }));
-        editor.dispatchEvent(new Event('change', { bubbles:true }));
+        // Using execCommand to ensure React state is updated
+        editor.focus();
+        document.execCommand('selectAll', false, null);
+        document.execCommand('insertText', false, newText);
     };
 
     // Trigger before sending
