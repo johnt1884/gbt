@@ -33,8 +33,8 @@
 
         const stamp = getCompactTimestamp();
 
-        // Timestamp + single linebreak
-        editor.innerText = `${stamp}\n${text}`;
+        // Timestamp + linebreaks
+        editor.innerText = `${stamp}\n\n${text}`;
 
         editor.dispatchEvent(new Event('input', { bubbles:true }));
         editor.dispatchEvent(new Event('change', { bubbles:true }));
