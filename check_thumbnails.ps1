@@ -213,7 +213,7 @@ foreach ($folder in $allProjectFolders) {
                 $thumbPath = Join-Path $regularThumbsDir $thumbName
                 $vPathBatch = $videoPath.Replace('%', '%%')
                 $tPathBatch = $thumbPath.Replace('%', '%%')
-                $fixCommands += "ffmpeg -y -noautorotate -i `"$vPathBatch`" -ss 00:00:02.000 -update 1 -frames:v 1 -vf `"scale=${thumbWidth}:${thumbHeight}:force_original_aspect_ratio=decrease,format=yuv420p`" -map_metadata -1 -strict -2 `"$tPathBatch`" || echo `"$vPathBatch`" >> `"%FAILED_LIST%`""
+                $fixCommands += "ffmpeg -y -noautorotate -ss 00:00:00.000 -analyzeduration 100M -probesize 100M -i `"$vPathBatch`" -update 1 -frames:v 1 -vf `"format=yuv420p,scale=${thumbWidth}:${thumbHeight}:force_original_aspect_ratio=decrease`" -map_metadata -1 -strict -2 `"$tPathBatch`" || echo `"$vPathBatch`" >> `"%FAILED_LIST%`""
             }
         }
         if ($projectIssues.MissingEdit.Count -gt 0) {
@@ -236,7 +236,7 @@ foreach ($folder in $allProjectFolders) {
                         $thumbPath = Join-Path $editThumbsDir $thumbName
                         $vPathBatch = $videoPath.Replace('%', '%%')
                         $tPathBatch = $thumbPath.Replace('%', '%%')
-                        $fixCommands += "ffmpeg -y -noautorotate -ss $timestamp -i `"$vPathBatch`" -update 1 -vframes 1 -vf `"scale=${thumbWidth}:${thumbHeight}:force_original_aspect_ratio=decrease,format=yuv420p`" -map_metadata -1 -strict -2 `"$tPathBatch`" >nul 2>&1 || echo `"$vPathBatch`" >> `"%FAILED_LIST%`""
+                        $fixCommands += "ffmpeg -y -noautorotate -ss $timestamp -analyzeduration 100M -probesize 100M -i `"$vPathBatch`" -update 1 -vframes 1 -vf `"format=yuv420p,scale=${thumbWidth}:${thumbHeight}:force_original_aspect_ratio=decrease`" -map_metadata -1 -strict -2 `"$tPathBatch`" >nul 2>&1 || echo `"$vPathBatch`" >> `"%FAILED_LIST%`""
                     }
                 } catch {
                     Write-Warning "Failed to get duration for $($videoPath). Skipping edit thumbnail generation for this file."
@@ -272,12 +272,12 @@ foreach ($folder in $allProjectFolders) {
                             $interval = [math]::Floor($durationInt / 10)
                             if ($interval -eq 0) { $interval = 1 }
                             $timestamp_recalc = ($timestamp) * $interval
-                            $fixCommands += "ffmpeg -y -noautorotate -ss $timestamp_recalc -i `"$vPathBatch`" -update 1 -vframes 1 -vf `"scale=${thumbWidth}:${thumbHeight}:force_original_aspect_ratio=decrease,format=yuv420p`" -map_metadata -1 -strict -2 `"$tPathBatch`" >nul 2>&1 || echo `"$vPathBatch`" >> `"%FAILED_LIST%`""
+                            $fixCommands += "ffmpeg -y -noautorotate -ss $timestamp_recalc -analyzeduration 100M -probesize 100M -i `"$vPathBatch`" -update 1 -vframes 1 -vf `"format=yuv420p,scale=${thumbWidth}:${thumbHeight}:force_original_aspect_ratio=decrease`" -map_metadata -1 -strict -2 `"$tPathBatch`" >nul 2>&1 || echo `"$vPathBatch`" >> `"%FAILED_LIST%`""
                         } catch {
                              Write-Warning "Failed to get duration for $($video.FullName). Skipping edit thumbnail regeneration for this file."
                         }
                     } else {
-                        $fixCommands += "ffmpeg -y -noautorotate -i `"$vPathBatch`" -ss 00:00:02.000 -update 1 -frames:v 1 -vf `"scale=${thumbWidth}:${thumbHeight}:force_original_aspect_ratio=decrease,format=yuv420p`" -map_metadata -1 -strict -2 `"$tPathBatch`" || echo `"$vPathBatch`" >> `"%FAILED_LIST%`""
+                        $fixCommands += "ffmpeg -y -noautorotate -ss 00:00:00.000 -analyzeduration 100M -probesize 100M -i `"$vPathBatch`" -update 1 -frames:v 1 -vf `"format=yuv420p,scale=${thumbWidth}:${thumbHeight}:force_original_aspect_ratio=decrease`" -map_metadata -1 -strict -2 `"$tPathBatch`" || echo `"$vPathBatch`" >> `"%FAILED_LIST%`""
                     }
                 } else {
                      $fixCommands += "if exist `"$($thumbPath.Replace('%', '%%'))`" del `"$($thumbPath.Replace('%', '%%'))`""
