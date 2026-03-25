@@ -213,7 +213,7 @@ foreach ($folder in $allProjectFolders) {
                 $thumbPath = Join-Path $regularThumbsDir $thumbName
                 $vPathBatch = $videoPath.Replace('%', '%%')
                 $tPathBatch = $thumbPath.Replace('%', '%%')
-                $fixCommands += "ffmpeg -y -noautorotate -i `"$vPathBatch`" -ss 00:00:02.000 -update 1 -frames:v 1 -vf `"scale=${thumbWidth}:${thumbHeight}:force_original_aspect_ratio=decrease`" -map_metadata -1 `"$tPathBatch`""
+                $fixCommands += "ffmpeg -y -noautorotate -i `"$vPathBatch`" -ss 00:00:02.000 -update 1 -frames:v 1 -vf `"scale=${thumbWidth}:${thumbHeight}:force_original_aspect_ratio=decrease,format=yuv420p`" -map_metadata -1 `"$tPathBatch`""
             }
         }
         if ($projectIssues.MissingEdit.Count -gt 0) {
@@ -236,7 +236,7 @@ foreach ($folder in $allProjectFolders) {
                         $thumbPath = Join-Path $editThumbsDir $thumbName
                         $vPathBatch = $videoPath.Replace('%', '%%')
                         $tPathBatch = $thumbPath.Replace('%', '%%')
-                        $fixCommands += "ffmpeg -y -noautorotate -ss $timestamp -i `"$vPathBatch`" -update 1 -vframes 1 -vf `"scale=${thumbWidth}:${thumbHeight}:force_original_aspect_ratio=decrease`" -map_metadata -1 `"$tPathBatch`" >nul 2>&1"
+                        $fixCommands += "ffmpeg -y -noautorotate -ss $timestamp -i `"$vPathBatch`" -update 1 -vframes 1 -vf `"scale=${thumbWidth}:${thumbHeight}:force_original_aspect_ratio=decrease,format=yuv420p`" -map_metadata -1 `"$tPathBatch`" >nul 2>&1"
                     }
                 } catch {
                     Write-Warning "Failed to get duration for $($videoPath). Skipping edit thumbnail generation for this file."
@@ -272,12 +272,12 @@ foreach ($folder in $allProjectFolders) {
                             $interval = [math]::Floor($durationInt / 10)
                             if ($interval -eq 0) { $interval = 1 }
                             $timestamp_recalc = ($timestamp) * $interval
-                            $fixCommands += "ffmpeg -y -noautorotate -ss $timestamp_recalc -i `"$vPathBatch`" -update 1 -vframes 1 -vf `"scale=${thumbWidth}:${thumbHeight}:force_original_aspect_ratio=decrease`" -map_metadata -1 `"$tPathBatch`" >nul 2>&1"
+                            $fixCommands += "ffmpeg -y -noautorotate -ss $timestamp_recalc -i `"$vPathBatch`" -update 1 -vframes 1 -vf `"scale=${thumbWidth}:${thumbHeight}:force_original_aspect_ratio=decrease,format=yuv420p`" -map_metadata -1 `"$tPathBatch`" >nul 2>&1"
                         } catch {
                              Write-Warning "Failed to get duration for $($video.FullName). Skipping edit thumbnail regeneration for this file."
                         }
                     } else {
-                        $fixCommands += "ffmpeg -y -noautorotate -i `"$vPathBatch`" -ss 00:00:02.000 -update 1 -frames:v 1 -vf `"scale=${thumbWidth}:${thumbHeight}:force_original_aspect_ratio=decrease`" -map_metadata -1 `"$tPathBatch`""
+                        $fixCommands += "ffmpeg -y -noautorotate -i `"$vPathBatch`" -ss 00:00:02.000 -update 1 -frames:v 1 -vf `"scale=${thumbWidth}:${thumbHeight}:force_original_aspect_ratio=decrease,format=yuv420p`" -map_metadata -1 `"$tPathBatch`""
                     }
                 } else {
                      $fixCommands += "if exist `"$($thumbPath.Replace('%', '%%'))`" del `"$($thumbPath.Replace('%', '%%'))`""
