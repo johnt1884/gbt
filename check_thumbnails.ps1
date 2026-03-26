@@ -123,6 +123,9 @@ foreach ($folder in $allProjectFolders) {
             $thumbPath = Join-Path $regularThumbsDir $thumbName
             if (-not (Test-Path -LiteralPath $thumbPath)) {
                 $projectIssues.MissingRegular.Add($video.FullName)
+            } elseif ((Get-Item -LiteralPath $thumbPath).Length -eq 0) {
+                 # Treat 0-byte files as missing
+                $projectIssues.MissingRegular.Add($video.FullName)
             }
         }
     } else {
@@ -135,16 +138,20 @@ foreach ($folder in $allProjectFolders) {
     if (Test-Path -LiteralPath $editThumbsDir) {
         foreach ($video in $videos) {
             $baseName = [System.IO.Path]::GetFileNameWithoutExtension($video.Name)
-            $isMissingAll = $true
+            $isMissingAny = $false
             for ($i = 1; $i -le 10; $i++) {
                 $thumbName = "${baseName}_${i}.jpg"
                 $thumbPath = Join-Path $editThumbsDir $thumbName
-                if (Test-Path -LiteralPath $thumbPath) {
-                    $isMissingAll = $false
+                if (-not (Test-Path -LiteralPath $thumbPath)) {
+                    $isMissingAny = $true
+                    break
+                } elseif ((Get-Item -LiteralPath $thumbPath).Length -eq 0) {
+                     # Treat 0-byte files as missing
+                    $isMissingAny = $true
                     break
                 }
             }
-            if ($isMissingAll) {
+            if ($isMissingAny) {
                 $projectIssues.MissingEdit.Add($video.FullName)
             }
         }
@@ -167,7 +174,8 @@ foreach ($folder in $allProjectFolders) {
                         $projectIssues.WrongDimensions.Add($thumb.FullName)
                     }
                 } catch {
-                    Write-Warning "Could not read image file: $($thumb.FullName)"
+                    Write-Warning "Could not read or corrupt image file: $($thumb.FullName). Adding to regeneration list."
+                    $projectIssues.WrongDimensions.Add($thumb.FullName)
                 } finally {
                     if ($img) { $img.Dispose() }
                 }
@@ -188,7 +196,8 @@ foreach ($folder in $allProjectFolders) {
                         $projectIssues.WrongDimensions.Add($thumb.FullName)
                     }
                 } catch {
-                    Write-Warning "Could not read image file: $($thumb.FullName)"
+                    Write-Warning "Could not read or corrupt image file: $($thumb.FullName). Adding to regeneration list."
+                    $projectIssues.WrongDimensions.Add($thumb.FullName)
                 } finally {
                     if ($img) { $img.Dispose() }
                 }
