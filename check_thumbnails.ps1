@@ -213,7 +213,7 @@ foreach ($folder in $allProjectFolders) {
                 $thumbPath = Join-Path $regularThumbsDir $thumbName
                 $vPathBatch = $videoPath.Replace('%', '%%')
                 $tPathBatch = $thumbPath.Replace('%', '%%')
-                $fixCommands += "ffmpeg -y -noautorotate -err_detect ignore_err -fflags +genpts+igndts+discardcorrupt -ss 00:00:00.000 -analyzeduration 2147483647 -probesize 2147483647 -i `"$vPathBatch`" -map 0:v:0 -update 1 -frames:v 1 -vf `"scale=${thumbWidth}:${thumbHeight}:force_original_aspect_ratio=decrease:flags=lanczos+accurate_rnd,format=yuv420p`" -pix_fmt yuv420p -color_range 2 -colorspace 1 -color_trc 1 -color_primaries 1 -map_metadata -1 -strict -2 `"$tPathBatch`" || echo `"$vPathBatch`" >> `"%FAILED_LIST%`""
+                $fixCommands += "ffmpeg -y -noautorotate -err_detect ignore_err -fflags +genpts+igndts+discardcorrupt -ss 00:00:00.000 -analyzeduration 2147483647 -probesize 2147483647 -i `"$vPathBatch`" -map 0:v:0 -update 1 -frames:v 1 -vf `"scale=${thumbWidth}:${thumbHeight}:force_original_aspect_ratio=decrease:flags=lanczos+accurate_rnd,format=yuv420p`" -pix_fmt yuv420p -color_range 2 -colorspace 1 -color_trc 1 -color_primaries 1 -map_metadata -1 -strict -2 `"$tPathBatch`" 2>`"%TEMP%\fferr.log`" || (echo `"$vPathBatch`" >> `"%FAILED_LIST%`" && echo [PROBE DATA] >> `"%FAILED_REPORT%`" && ffprobe -v error -show_entries stream=codec_name,pix_fmt,width,height,color_range,color_space,color_transfer,color_primaries -of default=noprint_wrappers=1 `"$vPathBatch`" >> `"%FAILED_REPORT%`" && echo [FFMPEG ERROR] >> `"%FAILED_REPORT%`" && type `"%TEMP%\fferr.log`" >> `"%FAILED_REPORT%`" && echo. >> `"%FAILED_REPORT%`" && echo -------------------------------------------------- >> `"%FAILED_REPORT%`")"
             }
         }
         if ($projectIssues.MissingEdit.Count -gt 0) {
@@ -236,7 +236,7 @@ foreach ($folder in $allProjectFolders) {
                         $thumbPath = Join-Path $editThumbsDir $thumbName
                         $vPathBatch = $videoPath.Replace('%', '%%')
                         $tPathBatch = $thumbPath.Replace('%', '%%')
-                        $fixCommands += "ffmpeg -y -noautorotate -err_detect ignore_err -fflags +genpts+igndts+discardcorrupt -ss $timestamp -analyzeduration 2147483647 -probesize 2147483647 -i `"$vPathBatch`" -map 0:v:0 -update 1 -vframes 1 -vf `"scale=${thumbWidth}:${thumbHeight}:force_original_aspect_ratio=decrease:flags=lanczos+accurate_rnd,format=yuv420p`" -pix_fmt yuv420p -color_range 2 -colorspace 1 -color_trc 1 -color_primaries 1 -map_metadata -1 -strict -2 `"$tPathBatch`" >nul 2>&1 || echo `"$vPathBatch`" >> `"%FAILED_LIST%`""
+                        $fixCommands += "ffmpeg -y -noautorotate -err_detect ignore_err -fflags +genpts+igndts+discardcorrupt -ss $timestamp -analyzeduration 2147483647 -probesize 2147483647 -i `"$vPathBatch`" -map 0:v:0 -update 1 -vframes 1 -vf `"scale=${thumbWidth}:${thumbHeight}:force_original_aspect_ratio=decrease:flags=lanczos+accurate_rnd,format=yuv420p`" -pix_fmt yuv420p -color_range 2 -colorspace 1 -color_trc 1 -color_primaries 1 -map_metadata -1 -strict -2 `"$tPathBatch`" 2>`"%TEMP%\fferr.log`" || (echo `"$vPathBatch`" >> `"%FAILED_LIST%`" && echo [PROBE DATA] >> `"%FAILED_REPORT%`" && ffprobe -v error -show_entries stream=codec_name,pix_fmt,width,height,color_range,color_space,color_transfer,color_primaries -of default=noprint_wrappers=1 `"$vPathBatch`" >> `"%FAILED_REPORT%`" && echo [FFMPEG ERROR] >> `"%FAILED_REPORT%`" && type `"%TEMP%\fferr.log`" >> `"%FAILED_REPORT%`" && echo. >> `"%FAILED_REPORT%`" && echo -------------------------------------------------- >> `"%FAILED_REPORT%`")"
                     }
                 } catch {
                     Write-Warning "Failed to get duration for $($videoPath). Skipping edit thumbnail generation for this file."
@@ -272,12 +272,12 @@ foreach ($folder in $allProjectFolders) {
                             $interval = [math]::Floor($durationInt / 10)
                             if ($interval -eq 0) { $interval = 1 }
                             $timestamp_recalc = ($timestamp) * $interval
-                            $fixCommands += "ffmpeg -y -noautorotate -err_detect ignore_err -fflags +genpts+igndts+discardcorrupt -ss $timestamp_recalc -analyzeduration 2147483647 -probesize 2147483647 -i `"$vPathBatch`" -map 0:v:0 -update 1 -vframes 1 -vf `"scale=${thumbWidth}:${thumbHeight}:force_original_aspect_ratio=decrease:flags=lanczos+accurate_rnd,format=yuv420p`" -pix_fmt yuv420p -color_range 2 -colorspace 1 -color_trc 1 -color_primaries 1 -map_metadata -1 -strict -2 `"$tPathBatch`" >nul 2>&1 || echo `"$vPathBatch`" >> `"%FAILED_LIST%`""
+                            $fixCommands += "ffmpeg -y -noautorotate -err_detect ignore_err -fflags +genpts+igndts+discardcorrupt -ss $timestamp_recalc -analyzeduration 2147483647 -probesize 2147483647 -i `"$vPathBatch`" -map 0:v:0 -update 1 -vframes 1 -vf `"scale=${thumbWidth}:${thumbHeight}:force_original_aspect_ratio=decrease:flags=lanczos+accurate_rnd,format=yuv420p`" -pix_fmt yuv420p -color_range 2 -colorspace 1 -color_trc 1 -color_primaries 1 -map_metadata -1 -strict -2 `"$tPathBatch`" 2>`"%TEMP%\fferr.log`" || (echo `"$vPathBatch`" >> `"%FAILED_LIST%`" && echo [PROBE DATA] >> `"%FAILED_REPORT%`" && ffprobe -v error -show_entries stream=codec_name,pix_fmt,width,height,color_range,color_space,color_transfer,color_primaries -of default=noprint_wrappers=1 `"$vPathBatch`" >> `"%FAILED_REPORT%`" && echo [FFMPEG ERROR] >> `"%FAILED_REPORT%`" && type `"%TEMP%\fferr.log`" >> `"%FAILED_REPORT%`" && echo. >> `"%FAILED_REPORT%`" && echo -------------------------------------------------- >> `"%FAILED_REPORT%`")"
                         } catch {
                              Write-Warning "Failed to get duration for $($video.FullName). Skipping edit thumbnail regeneration for this file."
                         }
                     } else {
-                        $fixCommands += "ffmpeg -y -noautorotate -err_detect ignore_err -fflags +genpts+igndts+discardcorrupt -ss 00:00:00.000 -analyzeduration 2147483647 -probesize 2147483647 -i `"$vPathBatch`" -map 0:v:0 -update 1 -frames:v 1 -vf `"scale=${thumbWidth}:${thumbHeight}:force_original_aspect_ratio=decrease:flags=lanczos+accurate_rnd,format=yuv420p`" -pix_fmt yuv420p -color_range 2 -colorspace 1 -color_trc 1 -color_primaries 1 -map_metadata -1 -strict -2 `"$tPathBatch`" || echo `"$vPathBatch`" >> `"%FAILED_LIST%`""
+                        $fixCommands += "ffmpeg -y -noautorotate -err_detect ignore_err -fflags +genpts+igndts+discardcorrupt -ss 00:00:00.000 -analyzeduration 2147483647 -probesize 2147483647 -i `"$vPathBatch`" -map 0:v:0 -update 1 -frames:v 1 -vf `"scale=${thumbWidth}:${thumbHeight}:force_original_aspect_ratio=decrease:flags=lanczos+accurate_rnd,format=yuv420p`" -pix_fmt yuv420p -color_range 2 -colorspace 1 -color_trc 1 -color_primaries 1 -map_metadata -1 -strict -2 `"$tPathBatch`" 2>`"%TEMP%\fferr.log`" || (echo `"$vPathBatch`" >> `"%FAILED_LIST%`" && echo [PROBE DATA] >> `"%FAILED_REPORT%`" && ffprobe -v error -show_entries stream=codec_name,pix_fmt,width,height,color_range,color_space,color_transfer,color_primaries -of default=noprint_wrappers=1 `"$vPathBatch`" >> `"%FAILED_REPORT%`" && echo [FFMPEG ERROR] >> `"%FAILED_REPORT%`" && type `"%TEMP%\fferr.log`" >> `"%FAILED_REPORT%`" && echo. >> `"%FAILED_REPORT%`" && echo -------------------------------------------------- >> `"%FAILED_REPORT%`")"
                     }
                 } else {
                      $fixCommands += "if exist `"$($thumbPath.Replace('%', '%%'))`" del `"$($thumbPath.Replace('%', '%%'))`""
@@ -314,7 +314,9 @@ if ($totalOverallIssues -gt 0) {
 @echo off
 chcp 65001 >nul
 set "FAILED_LIST=%TEMP%\failed_thumbnails.txt"
+set "FAILED_REPORT=%TEMP%\failed_report.txt"
 if exist "%FAILED_LIST%" del "%FAILED_LIST%"
+if exist "%FAILED_REPORT%" del "%FAILED_REPORT%"
 
 echo Starting thumbnail fix process...
 $($fixCommands -join "`r`n")
@@ -324,11 +326,19 @@ echo Thumbnail fix process complete.
 
 if exist "%FAILED_LIST%" (
     echo.
-    echo **************************************************
-    echo THE FOLLOWING VIDEOS FAILED TO PROCESS:
+    echo ==================================================
+    echo FAILED FILES:
     type "%FAILED_LIST%"
-    echo **************************************************
+    echo ==================================================
+    echo.
+    echo TECHNICAL ERROR SUMMARY (FOR ALL FAILURES):
+    echo ==================================================
+    if exist "%FAILED_REPORT%" type "%FAILED_REPORT%"
+    echo ==================================================
+
     del "%FAILED_LIST%"
+    del "%FAILED_REPORT%"
+    if exist "%TEMP%\fferr.log" del "%TEMP%\fferr.log"
 ) else (
     echo All thumbnails were processed successfully.
 )
