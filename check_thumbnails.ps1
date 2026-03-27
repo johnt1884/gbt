@@ -123,9 +123,6 @@ foreach ($folder in $allProjectFolders) {
             $thumbPath = Join-Path $regularThumbsDir $thumbName
             if (-not (Test-Path -LiteralPath $thumbPath)) {
                 $projectIssues.MissingRegular.Add($video.FullName)
-            } elseif ((Get-Item -LiteralPath $thumbPath).Length -eq 0) {
-                 # Treat 0-byte files as missing
-                $projectIssues.MissingRegular.Add($video.FullName)
             }
         }
     } else {
@@ -138,20 +135,16 @@ foreach ($folder in $allProjectFolders) {
     if (Test-Path -LiteralPath $editThumbsDir) {
         foreach ($video in $videos) {
             $baseName = [System.IO.Path]::GetFileNameWithoutExtension($video.Name)
-            $isMissingAny = $false
+            $isMissingAll = $true
             for ($i = 1; $i -le 10; $i++) {
                 $thumbName = "${baseName}_${i}.jpg"
                 $thumbPath = Join-Path $editThumbsDir $thumbName
-                if (-not (Test-Path -LiteralPath $thumbPath)) {
-                    $isMissingAny = $true
-                    break
-                } elseif ((Get-Item -LiteralPath $thumbPath).Length -eq 0) {
-                     # Treat 0-byte files as missing
-                    $isMissingAny = $true
+                if (Test-Path -LiteralPath $thumbPath) {
+                    $isMissingAll = $false
                     break
                 }
             }
-            if ($isMissingAny) {
+            if ($isMissingAll) {
                 $projectIssues.MissingEdit.Add($video.FullName)
             }
         }
@@ -174,8 +167,7 @@ foreach ($folder in $allProjectFolders) {
                         $projectIssues.WrongDimensions.Add($thumb.FullName)
                     }
                 } catch {
-                    Write-Warning "Could not read or corrupt image file: $($thumb.FullName). Adding to regeneration list."
-                    $projectIssues.WrongDimensions.Add($thumb.FullName)
+                    Write-Warning "Could not read image file: $($thumb.FullName)"
                 } finally {
                     if ($img) { $img.Dispose() }
                 }
@@ -196,8 +188,7 @@ foreach ($folder in $allProjectFolders) {
                         $projectIssues.WrongDimensions.Add($thumb.FullName)
                     }
                 } catch {
-                    Write-Warning "Could not read or corrupt image file: $($thumb.FullName). Adding to regeneration list."
-                    $projectIssues.WrongDimensions.Add($thumb.FullName)
+                    Write-Warning "Could not read image file: $($thumb.FullName)"
                 } finally {
                     if ($img) { $img.Dispose() }
                 }
@@ -222,7 +213,7 @@ foreach ($folder in $allProjectFolders) {
                 $thumbPath = Join-Path $regularThumbsDir $thumbName
                 $vPathBatch = $videoPath.Replace('%', '%%')
                 $tPathBatch = $thumbPath.Replace('%', '%%')
-                $fixCommands += "ffmpeg -y -noautorotate -err_detect ignore_err -fflags +genpts+igndts+discardcorrupt -ss 00:00:00.000 -analyzeduration 2147483647 -probesize 2147483647 -i `"$vPathBatch`" -map 0:v:0 -an -update 1 -frames:v 1 -vf `"scale=${thumbWidth}:${thumbHeight}:force_original_aspect_ratio=decrease:flags=lanczos,format=yuv420p`" -pix_fmt yuv420p -color_range 2 -colorspace 1 -color_trc 1 -color_primaries 1 -map_metadata -1 -strict -2 `"$tPathBatch`" 2>`"%TEMP%\fferr.log`" || (echo `"$vPathBatch`" >> `"%FAILED_LIST%`" && echo [TECHNICAL DIAGNOSTICS] >> `"%FAILED_REPORT%`" && ffprobe -v error -show_entries stream=codec_name,pix_fmt,width,height,color_range,color_space,color_transfer,color_primaries -of default=noprint_wrappers=1 `"$vPathBatch`" >> `"%FAILED_REPORT%`" && echo [FFMPEG ERROR LOG] >> `"%FAILED_REPORT%`" && type `"%TEMP%\fferr.log`" >> `"%FAILED_REPORT%`" && echo. >> `"%FAILED_REPORT%`" && echo -------------------------------------------------- >> `"%FAILED_REPORT%`")"
+                $fixCommands += "ffmpeg -y -noautorotate -err_detect ignore_err -fflags +genpts+igndts+discardcorrupt -ss 00:00:00.000 -analyzeduration 2147483647 -probesize 2147483647 -i `"$vPathBatch`" -map 0:v:0 -an -update 1 -frames:v 1 -vf `"scale=${thumbWidth}:${thumbHeight}:force_original_aspect_ratio=decrease:flags=lanczos,format=yuv420p`" -map_metadata -1 -strict -2 `"$tPathBatch`" 2>`"%TEMP%\fferr.log`" || (echo `"$vPathBatch`" >> `"%FAILED_LIST%`" && echo [TECHNICAL DIAGNOSTICS] >> `"%FAILED_REPORT%`" && ffprobe -v error -show_entries stream=codec_name,pix_fmt,width,height,color_range,color_space,color_transfer,color_primaries -of default=noprint_wrappers=1 `"$vPathBatch`" >> `"%FAILED_REPORT%`" && echo [FFMPEG ERROR LOG] >> `"%FAILED_REPORT%`" && type `"%TEMP%\fferr.log`" >> `"%FAILED_REPORT%`" && echo. >> `"%FAILED_REPORT%`" && echo -------------------------------------------------- >> `"%FAILED_REPORT%`")"
             }
         }
         if ($projectIssues.MissingEdit.Count -gt 0) {
@@ -245,7 +236,7 @@ foreach ($folder in $allProjectFolders) {
                         $thumbPath = Join-Path $editThumbsDir $thumbName
                         $vPathBatch = $videoPath.Replace('%', '%%')
                         $tPathBatch = $thumbPath.Replace('%', '%%')
-                        $fixCommands += "ffmpeg -y -noautorotate -err_detect ignore_err -fflags +genpts+igndts+discardcorrupt -ss $timestamp -analyzeduration 2147483647 -probesize 2147483647 -i `"$vPathBatch`" -map 0:v:0 -an -update 1 -vframes 1 -vf `"scale=${thumbWidth}:${thumbHeight}:force_original_aspect_ratio=decrease:flags=lanczos,format=yuv420p`" -pix_fmt yuv420p -color_range 2 -colorspace 1 -color_trc 1 -color_primaries 1 -map_metadata -1 -strict -2 `"$tPathBatch`" 2>`"%TEMP%\fferr.log`" || (echo `"$vPathBatch`" >> `"%FAILED_LIST%`" && echo [TECHNICAL DIAGNOSTICS] >> `"%FAILED_REPORT%`" && ffprobe -v error -show_entries stream=codec_name,pix_fmt,width,height,color_range,color_space,color_transfer,color_primaries -of default=noprint_wrappers=1 `"$vPathBatch`" >> `"%FAILED_REPORT%`" && echo [FFMPEG ERROR LOG] >> `"%FAILED_REPORT%`" && type `"%TEMP%\fferr.log`" >> `"%FAILED_REPORT%`" && echo. >> `"%FAILED_REPORT%`" && echo -------------------------------------------------- >> `"%FAILED_REPORT%`")"
+                        $fixCommands += "ffmpeg -y -noautorotate -err_detect ignore_err -fflags +genpts+igndts+discardcorrupt -ss $timestamp -analyzeduration 2147483647 -probesize 2147483647 -i `"$vPathBatch`" -map 0:v:0 -an -update 1 -vframes 1 -vf `"scale=${thumbWidth}:${thumbHeight}:force_original_aspect_ratio=decrease:flags=lanczos,format=yuv420p`" -map_metadata -1 -strict -2 `"$tPathBatch`" 2>`"%TEMP%\fferr.log`" || (echo `"$vPathBatch`" >> `"%FAILED_LIST%`" && echo [TECHNICAL DIAGNOSTICS] >> `"%FAILED_REPORT%`" && ffprobe -v error -show_entries stream=codec_name,pix_fmt,width,height,color_range,color_space,color_transfer,color_primaries -of default=noprint_wrappers=1 `"$vPathBatch`" >> `"%FAILED_REPORT%`" && echo [FFMPEG ERROR LOG] >> `"%FAILED_REPORT%`" && type `"%TEMP%\fferr.log`" >> `"%FAILED_REPORT%`" && echo. >> `"%FAILED_REPORT%`" && echo -------------------------------------------------- >> `"%FAILED_REPORT%`")"
                     }
                 } catch {
                     Write-Warning "Failed to get duration for $($videoPath). Skipping edit thumbnail generation for this file."
@@ -281,12 +272,12 @@ foreach ($folder in $allProjectFolders) {
                             $interval = [math]::Floor($durationInt / 10)
                             if ($interval -eq 0) { $interval = 1 }
                             $timestamp_recalc = ($timestamp) * $interval
-                            $fixCommands += "ffmpeg -y -noautorotate -err_detect ignore_err -fflags +genpts+igndts+discardcorrupt -ss $timestamp_recalc -analyzeduration 2147483647 -probesize 2147483647 -i `"$vPathBatch`" -map 0:v:0 -an -update 1 -vframes 1 -vf `"scale=${thumbWidth}:${thumbHeight}:force_original_aspect_ratio=decrease:flags=lanczos,format=yuv420p`" -pix_fmt yuv420p -color_range 2 -colorspace 1 -color_trc 1 -color_primaries 1 -map_metadata -1 -strict -2 `"$tPathBatch`" 2>`"%TEMP%\fferr.log`" || (echo `"$vPathBatch`" >> `"%FAILED_LIST%`" && echo [TECHNICAL DIAGNOSTICS] >> `"%FAILED_REPORT%`" && ffprobe -v error -show_entries stream=codec_name,pix_fmt,width,height,color_range,color_space,color_transfer,color_primaries -of default=noprint_wrappers=1 `"$vPathBatch`" >> `"%FAILED_REPORT%`" && echo [FFMPEG ERROR LOG] >> `"%FAILED_REPORT%`" && type `"%TEMP%\fferr.log`" >> `"%FAILED_REPORT%`" && echo. >> `"%FAILED_REPORT%`" && echo -------------------------------------------------- >> `"%FAILED_REPORT%`")"
+                            $fixCommands += "ffmpeg -y -noautorotate -err_detect ignore_err -fflags +genpts+igndts+discardcorrupt -ss $timestamp_recalc -analyzeduration 2147483647 -probesize 2147483647 -i `"$vPathBatch`" -map 0:v:0 -an -update 1 -vframes 1 -vf `"scale=${thumbWidth}:${thumbHeight}:force_original_aspect_ratio=decrease:flags=lanczos,format=yuv420p`" -map_metadata -1 -strict -2 `"$tPathBatch`" 2>`"%TEMP%\fferr.log`" || (echo `"$vPathBatch`" >> `"%FAILED_LIST%`" && echo [TECHNICAL DIAGNOSTICS] >> `"%FAILED_REPORT%`" && ffprobe -v error -show_entries stream=codec_name,pix_fmt,width,height,color_range,color_space,color_transfer,color_primaries -of default=noprint_wrappers=1 `"$vPathBatch`" >> `"%FAILED_REPORT%`" && echo [FFMPEG ERROR LOG] >> `"%FAILED_REPORT%`" && type `"%TEMP%\fferr.log`" >> `"%FAILED_REPORT%`" && echo. >> `"%FAILED_REPORT%`" && echo -------------------------------------------------- >> `"%FAILED_REPORT%`")"
                         } catch {
                              Write-Warning "Failed to get duration for $($video.FullName). Skipping edit thumbnail regeneration for this file."
                         }
                     } else {
-                        $fixCommands += "ffmpeg -y -noautorotate -err_detect ignore_err -fflags +genpts+igndts+discardcorrupt -ss 00:00:00.000 -analyzeduration 2147483647 -probesize 2147483647 -i `"$vPathBatch`" -map 0:v:0 -an -update 1 -frames:v 1 -vf `"scale=${thumbWidth}:${thumbHeight}:force_original_aspect_ratio=decrease:flags=lanczos,format=yuv420p`" -pix_fmt yuv420p -color_range 2 -colorspace 1 -color_trc 1 -color_primaries 1 -map_metadata -1 -strict -2 `"$tPathBatch`" 2>`"%TEMP%\fferr.log`" || (echo `"$vPathBatch`" >> `"%FAILED_LIST%`" && echo [TECHNICAL DIAGNOSTICS] >> `"%FAILED_REPORT%`" && ffprobe -v error -show_entries stream=codec_name,pix_fmt,width,height,color_range,color_space,color_transfer,color_primaries -of default=noprint_wrappers=1 `"$vPathBatch`" >> `"%FAILED_REPORT%`" && echo [FFMPEG ERROR LOG] >> `"%FAILED_REPORT%`" && type `"%TEMP%\fferr.log`" >> `"%FAILED_REPORT%`" && echo. >> `"%FAILED_REPORT%`" && echo -------------------------------------------------- >> `"%FAILED_REPORT%`")"
+                        $fixCommands += "ffmpeg -y -noautorotate -err_detect ignore_err -fflags +genpts+igndts+discardcorrupt -ss 00:00:00.000 -analyzeduration 2147483647 -probesize 2147483647 -i `"$vPathBatch`" -map 0:v:0 -an -update 1 -frames:v 1 -vf `"scale=${thumbWidth}:${thumbHeight}:force_original_aspect_ratio=decrease:flags=lanczos,format=yuv420p`" -map_metadata -1 -strict -2 `"$tPathBatch`" 2>`"%TEMP%\fferr.log`" || (echo `"$vPathBatch`" >> `"%FAILED_LIST%`" && echo [TECHNICAL DIAGNOSTICS] >> `"%FAILED_REPORT%`" && ffprobe -v error -show_entries stream=codec_name,pix_fmt,width,height,color_range,color_space,color_transfer,color_primaries -of default=noprint_wrappers=1 `"$vPathBatch`" >> `"%FAILED_REPORT%`" && echo [FFMPEG ERROR LOG] >> `"%FAILED_REPORT%`" && type `"%TEMP%\fferr.log`" >> `"%FAILED_REPORT%`" && echo. >> `"%FAILED_REPORT%`" && echo -------------------------------------------------- >> `"%FAILED_REPORT%`")"
                     }
                 } else {
                      $fixCommands += "if exist `"$($thumbPath.Replace('%', '%%'))`" del `"$($thumbPath.Replace('%', '%%'))`""
